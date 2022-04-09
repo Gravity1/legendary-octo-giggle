@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Discover Jkuat</title>
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      mapboxgl.accessToken =
+        "pk.eyJ1IjoiZ3Jhdml0eTEiLCJhIjoiY2t6YTRmbXBwMDA3YzJ2cWZrZzljbDBnNCJ9.IbOTaJUNv9gVCkjmgdjkrQ";
+      const map = new mapboxgl.Map({
+        style: "mapbox://styles/gravity1/cl1rtfvys005415qkynvfmk3o",
+        center: [37.01471319055807, -1.0959090634074637],
+        zoom: 15.5,
+        pitch: 45,
+        bearing: -17.6,
+        container: "map",
+        antialias: true,
+        attributionControl: false,
+        // interactive: false,
+      });
+
+      // pixels the map pans when the up or down arrow is clicked
+      const deltaDistance = 100;
+
+      // degrees the map rotates when the left or right arrow is clicked
+      const deltaDegrees = 25;
+
+      function easing(t) {
+        return t * (2 - t);
+      }
+
+      map.on("load", () => {
+        map.getCanvas().focus();
+
+        map.getCanvas().addEventListener(
+          "keydown",
+          (e) => {
+            e.preventDefault();
+            if (e.which === 38) {
+              // up
+              map.panBy([0, -deltaDistance], {
+                easing: easing,
+              });
+            } else if (e.which === 40) {
+              // down
+              map.panBy([0, deltaDistance], {
+                easing: easing,
+              });
+            } else if (e.which === 37) {
+              // left
+              map.easeTo({
+                bearing: map.getBearing() - deltaDegrees,
+                easing: easing,
+              });
+            } else if (e.which === 39) {
+              // right
+              map.easeTo({
+                bearing: map.getBearing() + deltaDegrees,
+                easing: easing,
+              });
+            }
+          },
+          true
+        );
+
+        // Insert the layer beneath any symbol layer.
+        const layers = map.getStyle().layers;
+        const labelLayerId = layers.find(
+          (layer) => layer.type === "symbol" && layer.layout["text-field"]
+        ).id;
+
+        // The 'building' layer in the Mapbox Streets
+        // vector tileset contains building height data
+        // from OpenStreetMap.
+        map.addLayer(
+          {
+            id: "add-3d-buildings",
+            source: "composite",
+            "source-layer": "building",
+            filter: ["==", "extrude", "true"],
+            type: "fill-extrusion",
+            minzoom: 15,
+            paint: {
+              "fill-extrusion-color": "#aaa",
+
+              // Use an 'interpolate' expression to
+              // add a smooth transition effect to
+              // the buildings as the user zooms in.
+              "fill-extrusion-height": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                15,
+                0,
+                15.05,
+                ["get", "height"],
+              ],
+              "fill-extrusion-base": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                15,
+                0,
+                15.05,
+                ["get", "min_height"],
+              ],
+              "fill-extrusion-opacity": 0.6,
+            },
+          },
+          labelLayerId
+        );
+      });
+    </script>
+  </body>
+</html>
